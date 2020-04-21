@@ -5,7 +5,7 @@
       <v-spacer/>
       <v-flex xs3>
         状态：
-        <v-btn-toggle mandatory v-model="search.saleable">
+        <v-btn-toggle mandatory v-model="filter.saleable">
           <v-btn flat>
             全部
           </v-btn>
@@ -23,7 +23,7 @@
           label="搜索"
           single-line
           hide-details
-          v-model="search.key"
+          v-model="filter.search"
         />
       </v-flex>
     </v-toolbar>
@@ -119,25 +119,35 @@
         show: false,// 是否弹出窗口
         selectedGoods: null, // 选中的商品信息
         isEdit: false, // 判断是编辑还是新增
-        step: 1// 表单中的导航条
+        step: 1, // 表单中的导航条
+        filter: {
+          saleable: false, // 上架还是下架
+          search: '' // 搜索过滤字段
+        }
       }
     },
     watch: {
       pagination: {
         handler() {
-          this.getDataFromApi();
+          this.getDataFromServer();
         },
         deep: true
       },
       search: {
         handler() {
-          this.getDataFromApi();
+          this.getDataFromServer();
         },
         deep: true
+      },
+      filter: {// 监视搜索字段
+        handler() {
+          this.getDataFromServer();
+        },
+        deep:true
       }
     },
     mounted() {
-      this.getDataFromApi();
+      this.getDataFromServer();
     },
     methods: {
       closeForm() {
@@ -145,7 +155,7 @@
         this.show = false;
         this.step = 1;
         this.selectedGoods = null;
-        this.getDataFromApi();
+        this.getDataFromServer();
       },
       lastStep() {
         if (this.step === 1) {
@@ -191,23 +201,30 @@
             this.$http.delete("/item/goods?id=" + id)
               .then(() => {
                 // 删除成功，重新加载数据
-                this.getDataFromApi();
+                this.getDataFromServer();
                 this.$message.info('删除成功!');
               })
           })
           .catch(() => {
             this.$message.info('已取消删除');
           });
-
       },
-      getDataFromApi() {
+      getDataFromServer() {
         this.loading = true;
-        setTimeout(() => {
-          // 返回假数据
-          this.items = goodsData.slice(0, 4);
-          this.totalItems = 25;
+        // 发起请求
+        this.$http.get("/item/spu/page", {
+          params: {
+            key: this.filter.search, // 搜索条件
+            saleable: this.filter.saleable, // 上下架
+            page: this.pagination.page,// 当前页
+            rows: this.pagination.rowsPerPage,// 每页大小
+          }
+        }).then(resp => { // 这里使用箭头函数
+          this.items = resp.data.items;
+          this.totalItems = resp.data.total;
+          // 完成赋值后，把加载状态赋值为false
           this.loading = false;
-        }, 300)
+        })
       }
     }
   }

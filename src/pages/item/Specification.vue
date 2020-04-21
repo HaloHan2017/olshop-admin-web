@@ -132,6 +132,7 @@
           // 如果是叶子节点，那么就发起ajax请求，去后台查询商品规格数据。
           this.$http.get("/item/spec/" + node.id)
             .then(resp => {
+              console.log(resp);
               // 查询成功后，把响应结果赋值给specifications属性，Vue会进行自动渲染。
               this.specifications = resp.data;
               // 记录下此时的规格数据，当页面撤销修改时，用来恢复原始数据
